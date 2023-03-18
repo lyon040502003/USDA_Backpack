@@ -4,7 +4,7 @@ import shutil
 
 # define master file paths
 file_path = "E:/Tools/USD/File_Sorce/3_layer_usd/layer_1_usda.usda"
-new_file_path = "E:/Tools/USD/OUT_Testusd_test2.usda"
+new_file_path = "E:/Tools/USD/OUT_Test/usd_test2.usda"
 
 
 # open new master file
@@ -26,7 +26,7 @@ sublayer_usda_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd
 # list off all non usd files  
 master_layer_IOfiles_sorce = []
 master_layer_IOfiles_destination = []
-
+# TODO write the sorce and destination function that determen for file coping to be dictonarys 
 
 # list off all usda files that need checking
 master_layer_usda_sorce = [os.path.abspath(file_path)]
@@ -96,7 +96,6 @@ def search_true_usda_files(usda_files):
 
         opend_file_old = open(file, "r")
         new_file_write = open(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]),"w")
-        print("curent work file " , os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]),"w")
         for line in opend_file_old:
             
             # find all lines that have a file in the line 
@@ -122,11 +121,8 @@ def search_true_usda_files(usda_files):
             elif "usda@" in line:
 
                 file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) 
-
                 new_rel_file_path = "@." + "/usd_tex/" + file_to_copy.split("\\")[-2] +"/"+ file_to_copy.split("\\")[-1] + "@"
                 old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
-
-                print(old_rel_path)
                 new_file_write.write(line.replace(old_rel_path, new_rel_file_path))
 
             else:
@@ -138,7 +134,9 @@ def search_true_usda_files(usda_files):
 recurve_usda_search(file_path)
 search_true_usda_files(master_layer_usda_sorce)
 
-#print
 
 #      /// TEST PINTS ///
 
+for sorce_file in master_layer_IOfiles_sorce:
+    print("sorce  ", sorce_file)
+    print("destination  ", master_layer_IOfiles_destination)
