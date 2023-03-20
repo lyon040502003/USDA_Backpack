@@ -18,8 +18,8 @@ file_drive = file_path.split("/")[-0]
 
 
 # deine paths for the new files to go to 
-sublayer_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd_tex"
-sublayer_usda_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd_tex\\usda"
+sublayer_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd_tex\\IO_files"
+sublayer_usda_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd_tex\\usda\\"
 
 # dic off all files that need to be copied and the destination where ther have to go to 
 IO_file_copy_dic = dict()
@@ -37,7 +37,7 @@ def copy_files(files_to_copy,file_destination):
     if  os.path.exists(file_destination):
         shutil.copy(files_to_copy, file_destination)
     else:
-        os.mkdir(file_destination)
+        os.makedirs(file_destination)
         shutil.copy(files_to_copy, file_destination)
     print("file copyied  " + files_to_copy)
 
@@ -117,7 +117,7 @@ def search_true_usda_files(usda_files):
             elif "usda@" in line:
 
                 file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) 
-                new_rel_file_path = "@." + "/usd_tex/" + file_to_copy.split("\\")[-2] +"/"+ file_to_copy.split("\\")[-1] + "@"
+                new_rel_file_path = "@." + "/usd_tex/usda/" + file_to_copy.split("\\")[-2] +"/"+ file_to_copy.split("\\")[-1] + "@" #TODO make the file path variable based and not hard coded
                 old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
                 new_file_write.write(line.replace(old_rel_path, new_rel_file_path))
 
@@ -133,7 +133,8 @@ search_true_usda_files(master_layer_usda_sorce)
 
 #      /// TEST PINTS ///
 
-
+#TODO fix the relative file paths for the usda files and the IO files ( tay are curetnly searching from the master usda file position )
 
 for sorce in IO_file_copy_dic:
+    copy_files(sorce,IO_file_copy_dic[sorce])
     print(sorce, "|", IO_file_copy_dic[sorce])
