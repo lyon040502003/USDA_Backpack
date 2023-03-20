@@ -21,19 +21,15 @@ file_drive = file_path.split("/")[-0]
 sublayer_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd_tex"
 sublayer_usda_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd_tex\\usda"
 
-#print("file destinatin usda" ,sublayer_usda_files)
-
-# list off all non usd files  
-master_layer_IOfiles_sorce = []
-master_layer_IOfiles_destination = []
-# TODO write the sorce and destination function that determen for file coping to be dictonarys 
+# dic off all files that need to be copied and the destination where ther have to go to 
+IO_file_copy_dic = dict()
 
 # list off all usda files that need checking
 master_layer_usda_sorce = [os.path.abspath(file_path)]
 master_layer_usda_destination = []
 
 
-#         /// FUNCTIONS ////
+#         /// FUNCTIONS ////  
 
 
 def copy_files(files_to_copy,file_destination):
@@ -107,8 +103,8 @@ def search_true_usda_files(usda_files):
                 # create destination dir out off target dir, last foulder in the original dir and the file name
                 file_destination_dir = sublayer_files+"\\"+file_to_copy.split("\\")[-2] + "\\" + file_to_copy.split("\\")[-1]
                 
-                master_layer_IOfiles_sorce.append(file_to_copy)
-                master_layer_IOfiles_destination.append(file_destination_dir)
+                # addes the files sorce and the file destination to the IO file copy dic 
+                IO_file_copy_dic[file_to_copy] = file_destination_dir
 
                 
                 # generate new line to replace old line in new file 
@@ -137,6 +133,7 @@ search_true_usda_files(master_layer_usda_sorce)
 
 #      /// TEST PINTS ///
 
-for sorce_file in master_layer_IOfiles_sorce:
-    print("sorce  ", sorce_file)
-    print("destination  ", master_layer_IOfiles_destination)
+
+
+for sorce in IO_file_copy_dic:
+    print(sorce, "|", IO_file_copy_dic[sorce])

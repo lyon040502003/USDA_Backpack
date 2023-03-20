@@ -56,13 +56,13 @@ def find_usda_files():
             master_layer_usda_destination.append(file_destination_dir)  
     print("")
     
- 
+
 
     recursive_usd_search("E:/temp/dell/usd_test2.usda")
     
-       
+
 def create_new_rel_path():
-   
+
     new_rel_file_path = "@." + "/usd_tex/" + file_to_copy.split("\\")[-1] + "@"
     old_line = "@" + (line.strip().split("@"))[-2] + "@"
     file2.write(line.replace(old_line, new_rel_file_path))   
