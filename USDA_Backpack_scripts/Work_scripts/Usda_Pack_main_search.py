@@ -25,7 +25,7 @@ sublayer_usda_files = os.path.split(new_file_path)[0].replace('/','\\') + "\\usd
 IO_file_copy_dic = dict()
 
 # list off all usda files that need checking
-master_layer_usda_sorce = [os.path.abspath(file_path)]
+master_layer_usda_sorce = []
 master_layer_usda_destination = []
 
 
@@ -34,12 +34,13 @@ master_layer_usda_destination = []
 
 def copy_files(files_to_copy,file_destination):
     
-    if  os.path.exists(file_destination):
+    
+    if  os.path.exists(os.path.dirname(file_destination)):
         shutil.copy(files_to_copy, file_destination)
     else:
-        os.makedirs(file_destination)
+        os.makedirs(os.path.dirname(file_destination))
         shutil.copy(files_to_copy, file_destination)
-    print("file copyied  " + files_to_copy)
+
 
 
 # function to recursivle search true all usda files 
@@ -91,13 +92,15 @@ def search_true_usda_files(usda_files):
 
 
         opend_file_old = open(file, "r")
-        new_file_write = open(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]),"w")
+
+        new_file_path = os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1])
+        new_file_write = open(new_file_path,"w")
+
         for line in opend_file_old:
             
             # find all lines that have a file in the line 
             if "file" in line:    
                 
-                os.chdir(os.path.dirname(os.path.abspath(file)))  
                 # build abselut path                
                 file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\'))  
                 # create destination dir out off target dir, last foulder in the original dir and the file name
@@ -108,8 +111,9 @@ def search_true_usda_files(usda_files):
 
                 
                 # generate new line to replace old line in new file 
-                new_rel_file_path = "@." + "/usd_tex/" + file_to_copy.split("\\")[-2] +"/"+ file_to_copy.split("\\")[-1] + "@"
+                new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path) + "@"
                 old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
+
 
                 # write the new relative path in to the usda file 
                 new_file_write.write(line.replace(old_rel_path, new_rel_file_path))     
@@ -117,12 +121,60 @@ def search_true_usda_files(usda_files):
             elif "usda@" in line:
 
                 file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) 
-                new_rel_file_path = "@." + "/usd_tex/usda/" + file_to_copy.split("\\")[-2] +"/"+ file_to_copy.split("\\")[-1] + "@" #TODO make the file path variable based and not hard coded
+                new_rel_file_path = "@" + os.path.relpath(os.path.abspath(sublayer_usda_files+file_to_copy.split("\\")[-2]+"\\" +file_to_copy.split("\\")[-1]), new_file_path) + "@"
+
+
                 old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
+
+                #write the line
                 new_file_write.write(line.replace(old_rel_path, new_rel_file_path))
 
             else:
                 new_file_write.write(line)
+
+
+# TODO gug mal nach ob das ganze hier auch das baut wass es soll  muss das ding überhaupt ? ich bin mir nicht sicher 
+# Function that bilds the master usda file 
+def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
+    
+    print(new_master_usda_file)
+    old_file = open(old_master_usda_file)
+    new_file_write = open(new_master_usda_file,"w")
+
+    for line in old_file:
+        # find all lines that have a file in the line 
+        if "file" in line:    
+            
+            # build abselut path                
+            file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\'))  
+            # create destination dir out off target dir, last foulder in the original dir and the file name
+            file_destination_dir = sublayer_files+"\\"+file_to_copy.split("\\")[-2] + "\\" + file_to_copy.split("\\")[-1]
+            
+            # addes the files sorce and the file destination to the IO file copy dic 
+            IO_file_copy_dic[file_to_copy] = file_destination_dir
+
+            
+            # generate new line to replace old line in new file 
+            new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path) + "@"
+            old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
+
+
+            # write the new relative path in to the usda file 
+            new_file_write.write(line.replace(old_rel_path, new_rel_file_path))     
+
+        elif "usda@" in line:
+
+            file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) 
+            new_rel_file_path = "@" + os.path.relpath(os.path.abspath(sublayer_usda_files+file_to_copy.split("\\")[-2]+"\\" +file_to_copy.split("\\")[-1]), new_file_path) + "@"
+
+
+            old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
+
+            #write the line
+            new_file_write.write(line.replace(old_rel_path, new_rel_file_path))
+
+        else:
+            new_file_write.write(line)
 
 
 #      /// Calls ///
@@ -130,11 +182,14 @@ def search_true_usda_files(usda_files):
 recurve_usda_search(file_path)
 search_true_usda_files(master_layer_usda_sorce)
 
-
-#      /// TEST PINTS ///
-
-#TODO fix the relative file paths for the usda files and the IO files ( tay are curetnly searching from the master usda file position )
+write_new_master_usda_file(file_path,new_file_path)
 
 for sorce in IO_file_copy_dic:
     copy_files(sorce,IO_file_copy_dic[sorce])
-    print(sorce, "|", IO_file_copy_dic[sorce])
+    #print(sorce, "|", IO_file_copy_dic[sorce])
+    
+
+#      /// TEST PINTS ///
+
+
+#TODO die walk true list sache muss mal ne function werden mein bester 
