@@ -111,7 +111,7 @@ def search_true_usda_files(usda_files):
 
                 
                 # generate new line to replace old line in new file 
-                new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path) + "@"
+                new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path)[1:] + "@"
                 old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
 
 
@@ -121,7 +121,7 @@ def search_true_usda_files(usda_files):
             elif "usda@" in line:
 
                 file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) 
-                new_rel_file_path = "@" + os.path.relpath(os.path.abspath(sublayer_usda_files+file_to_copy.split("\\")[-2]+"\\" +file_to_copy.split("\\")[-1]), new_file_path) + "@"
+                new_rel_file_path = "@" + os.path.relpath(os.path.abspath(sublayer_usda_files+file_to_copy.split("\\")[-2]+"\\" +file_to_copy.split("\\")[-1]), new_file_path)[1:] + "@"
 
 
                 old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
@@ -133,11 +133,10 @@ def search_true_usda_files(usda_files):
                 new_file_write.write(line)
 
 
-# TODO gug mal nach ob das ganze hier auch das baut wass es soll  muss das ding überhaupt ? ich bin mir nicht sicher 
+# TODO gug mal nach ob das ganze hier auch das baut wass es soll /  muss das ding überhaupt ? ich bin mir nicht sicher 
 # Function that bilds the master usda file 
 def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
     
-    print(new_master_usda_file)
     old_file = open(old_master_usda_file)
     new_file_write = open(new_master_usda_file,"w")
 
@@ -155,7 +154,7 @@ def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
 
             
             # generate new line to replace old line in new file 
-            new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path) + "@"
+            new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path)[1:]  + "@"
             old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
 
 
@@ -165,10 +164,11 @@ def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
         elif "usda@" in line:
 
             file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) 
-            new_rel_file_path = "@" + os.path.relpath(os.path.abspath(sublayer_usda_files+file_to_copy.split("\\")[-2]+"\\" +file_to_copy.split("\\")[-1]), new_file_path) + "@"
+            new_rel_file_path = "@" + os.path.relpath(os.path.abspath(sublayer_usda_files+file_to_copy.split("\\")[-2]+"\\" +file_to_copy.split("\\")[-1]), new_file_path)[1:] + "@"
 
 
             old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
+            
 
             #write the line
             new_file_write.write(line.replace(old_rel_path, new_rel_file_path))
@@ -184,6 +184,7 @@ search_true_usda_files(master_layer_usda_sorce)
 
 write_new_master_usda_file(file_path,new_file_path)
 
+# TODO rework the copy files function to use an dic as its new system
 for sorce in IO_file_copy_dic:
     copy_files(sorce,IO_file_copy_dic[sorce])
     #print(sorce, "|", IO_file_copy_dic[sorce])
