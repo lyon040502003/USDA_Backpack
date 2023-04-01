@@ -3,6 +3,8 @@ import shutil
 import re
 import fnmatch
 import pprint
+import fileinput
+
 
 # define master file paths
 file_path = "E:/Tools/USD/File_Sorce_2/master_usda.usda"
@@ -10,7 +12,8 @@ new_file_path = "E:/Tools/USD/OUT_Test/usd_test2.usda"
 
 
 # open new master file
-destination_file = open(new_file_path, "w")
+
+
 
 
 # define default file vars
@@ -31,7 +34,7 @@ IO_file_copy_dic = dict()
 master_layer_usda_sorce = []
 master_layer_usda_destination = []
 
-
+all_written_usda_files = []
 
 texture_file_types = [line.rstrip() for line in open('USDA_Backpack_scripts/Work_scripts/conf_files/Image_file_types.txt')]
 usd_file_types = [line.rstrip() for line in open('USDA_Backpack_scripts/Work_scripts/conf_files/usd_file_formats.txt')]
@@ -39,7 +42,8 @@ usd_file_types.remove(".usda")
 Geo_file_types = [line.rstrip() for line in open('USDA_Backpack_scripts/Work_scripts/conf_files/Image_file_types.txt')]
 
 
-
+Hou_dir = "C:/Program Files/Side Effects Software/Houdini 19.5.435/bin/"
+iconver_exe = "iconvert.exe"
 
 
 
@@ -47,20 +51,67 @@ Geo_file_types = [line.rstrip() for line in open('USDA_Backpack_scripts/Work_scr
 
 #         /// FUNCTIONS ////  
 
+def refactor_copy_dic(copy_dic):
+    udim_work_dic = dict()
+    udim_files = []
+    udim_files_destination = []
+    for sorce in copy_dic:
+        
+        
+        if "<UDIM>" in sorce:
+            udim_files.append(sorce)  
+            udim_files_destination.append(copy_dic[sorce])
+            udim_work_dic[sorce]=copy_dic[sorce]            
+            
+    for files in udim_work_dic:
+        filenames = fnmatch.filter(os.listdir(os.path.dirname(files)), '*')
+        target_file_dir = os.path.dirname(udim_work_dic[files])
+        file_front = files.split("\\")[-1].replace("<UDIM>", "/").split("/")[0]
+        file_back = files.split("\\")[-1].replace("<UDIM>", "/").split("/")[1]
+        for tex in filenames:
+            if re.search(f'{file_front}1[0-9][0-9][0-9]{file_back}', tex):
+                IO_file_copy_dic[os.path.join(os.path.dirname(files),tex)] = os.path.join(target_file_dir,tex)
 
 
-def copy_files(files_to_copy,file_destination):
+
+
+
+
+
+
+class file_manager():
+        
+    def copy_files(IO_dic):
+        
+        for sorce in IO_dic:
+            if  os.path.exists(os.path.dirname(IO_dic[sorce])):
+                shutil.copy(sorce, IO_dic[sorce])
+            else:
+                os.makedirs(os.path.dirname(IO_dic[sorce]))
+                shutil.copy(sorce, IO_dic[sorce])
+            print(" file copyied ", sorce, "  //  ", IO_dic[sorce])
     
-    
-    if  os.path.exists(os.path.dirname(file_destination)):
-        shutil.copy(files_to_copy, file_destination)
-    else:
-        os.makedirs(os.path.dirname(file_destination))
-        shutil.copy(files_to_copy, file_destination)
+    def convert_to_rat(IO_dic,usd_dic):
+        for sorce_file in IO_dic: 
+            print("test:",sorce_file)
+            in_file = IO_dic[sorce_file]
+            cmd_iconvert_command = "-g auto  " + in_file +"  " + in_file.replace(in_file.split("/")[-1].split(".")[-1],'rat')
+            cmd_command = '"'+Hou_dir+iconver_exe+'" '+ cmd_iconvert_command  #TODO this needs to be multi thread
+            os.system(cmd_command)
+            os.remove(in_file)
+        
+        for file in usd_dic:
+            with fileinput.input(inplace=True,files=(file)) as f:
+                for line in f:
+                    if any(ext in line for ext in texture_file_types) and "file" in line: 
+                        print(line.replace(line.split("@")[-2].split(".")[-1], "rat"))
+                    else:
+                        print(line)
+                
 
 
-# end alternate constructor
-#TODO rewrite the run true line functions in to one actual function 
+
+
 
 
 class line_runner():
@@ -113,7 +164,6 @@ class line_runner():
                 old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
 
                 new_file_write.write(line.replace(old_rel_path, new_rel_file_path))
-                print(old_rel_path, new_rel_file_path)
 
             else:
                 new_file_write.write(line)
@@ -145,7 +195,7 @@ def recurve_usda_search(file):
     # recursevly search true all found usda files
     for files in usd_files:
         recurve_usda_search(files)
-    
+    opend_file.close()
 
 # function to find all files in all usda files and write new usda files 
 def search_true_usda_files(usda_files): 
@@ -170,42 +220,22 @@ def search_true_usda_files(usda_files):
 
         new_file_path = os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1])
         new_file_write = open(new_file_path,"w")
+        all_written_usda_files.append(new_file_path)
 
         line_runner.run_true_line(opend_file_old,new_file_write, 5)
+        new_file.close()
 
 
-# TODO gug mal nach ob das ganze hier auch das baut wass es soll /  muss das ding überhaupt ? ich bin mir nicht sicher 
 # Function that bilds the master usda file 
 def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
     
     old_file = open(old_master_usda_file)
     new_file_write = open(new_master_usda_file,"w")
+    all_written_usda_files.append(new_master_usda_file)
     line_runner.run_true_line(old_file,new_file_write, 5)
+    old_file.close()
+    new_file_write.close()
 
-
-def refactor_copy_dic(copy_dic):
-    udim_work_dic = dict()
-    udim_files = []
-    udim_files_destination = []
-    for sorce in copy_dic:
-        
-        
-        if "<UDIM>" in sorce:
-            udim_files.append(sorce)  
-            udim_files_destination.append(copy_dic[sorce])
-            udim_work_dic[sorce]=copy_dic[sorce]            
-            
-    for files in udim_work_dic:
-        filenames = fnmatch.filter(os.listdir(os.path.dirname(files)), '*')
-        target_file_dir = os.path.dirname(udim_work_dic[files])
-        file_front = files.split("\\")[-1].replace("<UDIM>", "/").split("/")[0]
-        file_back = files.split("\\")[-1].replace("<UDIM>", "/").split("/")[1]
-        for tex in filenames:
-            if re.search(f'{file_front}1[0-9][0-9][0-9]{file_back}', tex):
-                IO_file_copy_dic[os.path.join(os.path.dirname(files),tex)] = os.path.join(target_file_dir,tex)
-
-
-        
 
 
         
@@ -222,11 +252,10 @@ def calls():
 
     write_new_master_usda_file(file_path,new_file_path)
     refactor_copy_dic(IO_file_sorce_dic)
-
-    # TODO rework the copy files function to use an dic as its new system
-    # for sorce in IO_file_sorce_dic:
-    #    copy_files(sorce,IO_file_sorce_dic[sorce])
-        #print(sorce, "|", IO_file_sorce_dic[sorce])
+    
+    
+    file_manager.copy_files(IO_file_copy_dic)
+    file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
     
     
 
@@ -234,8 +263,3 @@ calls()
 
 #      /// TEST PINTS ///
 
-
-#TODO die walk true list sache muss mal ne function werden mein bester 
-
-
-#pprint.pprint(IO_file_copy_dic)
