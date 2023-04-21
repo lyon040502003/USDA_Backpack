@@ -4,12 +4,13 @@ import re
 import fnmatch
 import pprint
 import fileinput
+from pathlib import Path
 
 #E:/Demo_Base/The_Wodden_House/Rendering/usd_test3.usda
 #E:/Demo_Base/The_Wodden_House/Rendering/Shoot_1_sceene_usda.usda
 # define master file paths
-file_path = "E:/Demo_Base/The_Wodden_House/Rendering/Shoot_1_sceene_usda.usda"
-new_file_path = "E:/Demo_Base/The_Wodden_House/test_conv/usd_exp.usda"
+file_path = "C:/Users/lyonm/Documents/GitHub/usd_backpack_test_cases/Simple_tester/Sceene/main_sccene_render.usda"
+new_file_path = "C:/Users/lyonm/Documents/GitHub/usd_backpack_test_cases/test_out/simple_tester/simple_test_exp_test.usda"
 
 
 # open new master file
@@ -65,6 +66,8 @@ def refactor_copy_dic(copy_dic):
         else:
             IO_file_copy_dic[sorce]=copy_dic[sorce]  
     for files in udim_work_dic:
+        print("files in the work dic", files)
+        print(os.listdir(os.path.dirname(os.path.abspath(files))))
         filenames = fnmatch.filter(os.listdir(os.path.dirname(files)), '*')
         target_file_dir = os.path.dirname(udim_work_dic[files])
         file_front = files.split("\\")[-1].replace("<UDIM>", "/").split("/")[0]
@@ -78,12 +81,17 @@ class file_manager():
     def copy_files(IO_dic):
         
         for sorce in IO_dic:
-            if  os.path.exists(os.path.dirname(IO_dic[sorce])):
+            print("file to copy  ",IO_dic[sorce])
+            if  os.path.exists(IO_dic[sorce]): 
+                os.remove(IO_dic[sorce])
+                print("file existed, remove file ",IO_dic[sorce])
                 shutil.copy(sorce, IO_dic[sorce])
             else:
-                os.makedirs(os.path.dirname(IO_dic[sorce]))
+                Path(os.path.abspath(os.path.dirname(IO_dic[sorce]))).mkdir(parents=True, exist_ok=True)
+                print("dir_created", os.path.abspath(os.path.dirname(IO_dic[sorce])))
                 shutil.copy(sorce, IO_dic[sorce])
-            print(" file copyied ", sorce, "  //  ", IO_dic[sorce])
+            print(" file copyied f/t", sorce, "  //  ", IO_dic[sorce],".\n")
+                
     
     def convert_to_rat(IO_dic,usd_dic):
         for sorce_file in IO_dic: 
@@ -95,6 +103,7 @@ class file_manager():
             os.remove(in_file)
         
         for file in usd_dic:
+            print("recursive files ", file)
             with fileinput.input(inplace=True,files=(file)) as f:
                 for line in f:
                     if any(ext in line for ext in texture_file_types) and "file" in line: 
@@ -103,18 +112,27 @@ class file_manager():
                         print(line)
 
 class line_runner():
-    
-    def build_file_pathing(line):
-                
-        file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\'))  
-        file_destination_dir = sublayer_files+"\\"+file_to_copy.split("\\")[-2] + "\\" + file_to_copy.split("\\")[-1]
+    #TODO needs to be rewritten to take all trypes of files 
+    def build_file_pathing(line,curent_file): # TODO this function needs to be rewritten to take in the curent work file 
+        print("line_runner_build_file_pathing_args", line, curent_file)
         
-        new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path)[1:] + "@"
-        new_rel_file_path = new_rel_file_path.replace('\\','/')
         old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
+        
+        
+        sorce_rel_file = line.split("@")[-2]
+        sorce_abs_file = os.path.abspath(curent_file.replace(curent_file.split("\\")[-1],sorce_rel_file))
+        
+        new_work_file_path = os.path.abspath(sublayer_usda_files+"\\"+curent_file.split("\\")[-2] + "\\" + curent_file.split("\\")[-1])
+        
+        new_abs_file_path = os.path.abspath(sublayer_files+"\\"+sorce_abs_file.split("\\")[-2] + "\\" + sorce_abs_file.split("\\")[-1])
+        new_rel_file_path2 = os.path.relpath(new_abs_file_path, new_work_file_path).replace("\\","/")[1:]
+        new_rel_path_line = "@" + new_rel_file_path2 + "@"
+        print("paths",new_rel_path_line)
+        
+        print("")
+        return new_rel_path_line, old_rel_path, new_abs_file_path, sorce_abs_file
 
-        print("build_file_pathing()    ","new_rel_path:",new_rel_file_path,"     old_rel_path:",old_rel_path)
-        return new_rel_file_path, old_rel_path, file_destination_dir, file_to_copy
+
 
 
     def run_true_line(file_to_run_true, new_file_write, function_set):
@@ -132,9 +150,10 @@ class line_runner():
 
         for line in file_to_run_true:
             
-            if any(ext in line for ext in texture_file_types) and "file" in line: 
-
-                result = line_runner.build_file_pathing(line)
+            if any(ext in line for ext in texture_file_types) and ":file" in line: 
+                print("line_runner run true line ", file_to_run_true.name)
+                print("tex file found ", line)
+                result = line_runner.build_file_pathing(line,file_to_run_true.name)
                 
                 IO_file_sorce_dic[result[3]] = result[2]
                 new_file_write.write(line.replace(result[1], result[0]))    
@@ -147,22 +166,21 @@ class line_runner():
                 new_file_write.write(line.replace(result[1], result[0])) 
 
 
-            elif "usda@" in line:   #TODO find the 
+            elif "usda@" in line:
                 
                 print("line runner usda found  ")
                 print("line runner curent work file ", file_to_run_true.name)
                 print("line runner file taht gets created ", new_file_write.name)
-                print("line runner original abs path and new abs path")
-                print("")
-                
-                current_file = ""
-                new_created_file = ""
-                
-                original_rel_file_path = ""
-                original_abs_file_path = ""
-                
-                new_abs_file_path = ""
-                new_rel_file_path = ""
+                file_to_copy = os.path.abspath(file_to_run_true.name.replace(os.path.abspath(file_to_run_true.name).split("\\")[-1], line.split("@")[-2]))
+                print("original abs path test" ,file_to_copy)
+                new_abs_path = os.path.abspath(sublayer_usda_files+"\\"+file_to_copy.split("\\")[-2] + "\\" + file_to_copy.split("\\")[-1])
+                print("new abs path for copy",new_abs_path)
+                print("work line  ", line)
+                new_rel_path = os.path.relpath(new_abs_path, new_file_write.name)[1:]
+                print("new_rel_path ", new_rel_path)
+                new_line = line.replace(line.split("@")[-2],new_rel_path.replace("\\","/"))
+                print("new line", new_line)
+                new_file_write.write(new_line)
                 
 
             else:
@@ -199,31 +217,30 @@ def recurve_usda_search(file):
 # function to find all files in all usda files and write new usda files 
 def search_true_usda_files(usda_files): 
     for file in usda_files:
-        # function that creates the new usda file and its directory #TODO re build this block its guly af
-        if  os.path.exists(os.path.dirname(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]))):
-            try:
-                new_file = open(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]),"x")
-            except:
-                os.remove(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]))
-                new_file = open(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]),"x")                
+        print("text", file)
+        new_file_pos = os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1])
+        new_usda_file_dir = os.path.dirname(new_file_pos)
+        if  os.path.exists(new_file_pos): 
+            print("exists")
+            os.remove(new_file_pos)
+            print("file existed and was replaced : ",new_file_pos)
+            new_file_write = open(os.path.abspath(new_file_pos),"w")
         else:
-            os.makedirs(os.path.dirname(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1])))
-            try:
-                new_file = open(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]),"x")
-            except:
-                os.remove(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]))
-                new_file = open(os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1]),"x") 
+            Path(new_usda_file_dir).mkdir(parents=True, exist_ok=True)
+            new_file_write = open(os.path.abspath(new_file_pos),"w")
+            print("dir was missing and file was created :",new_file_pos)
+        print("created usda file : ",new_file_pos)
 
 
         opend_file_old = open(file, "r")
 
         new_file_path = os.path.abspath(sublayer_usda_files+file.split("\\")[-2]+"\\" +file.split("\\")[-1])
-        new_file_write = open(new_file_path,"w")
+        #new_file_write = open(new_file_path,"w")
         all_written_usda_files.append(new_file_path)
 
         line_runner.run_true_line(opend_file_old,new_file_write, 5)
         print("search_true_usda_files work file   ",opend_file_old)
-        new_file.close()
+        new_file_write.close()
 
 # Function that bilds the master usda file 
 def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
@@ -246,8 +263,8 @@ def calls():
     write_new_master_usda_file(file_path,new_file_path)
     refactor_copy_dic(IO_file_sorce_dic)
     
-    #file_manager.copy_files(IO_file_copy_dic)
-    #file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
+    file_manager.copy_files(IO_file_copy_dic)
+    # file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
 
     
 
