@@ -5,10 +5,11 @@ import fnmatch
 import pprint
 import fileinput
 
-
+#E:/Demo_Base/The_Wodden_House/Rendering/usd_test3.usda
+#E:/Demo_Base/The_Wodden_House/Rendering/Shoot_1_sceene_usda.usda
 # define master file paths
-file_path = "E:/Tools/USD/File_Sorce_2/master_usda.usda"
-new_file_path = "E:/Tools/USD/OUT_Test/usd_test2.usda"
+file_path = "E:/Demo_Base/The_Wodden_House/Rendering/Shoot_1_sceene_usda.usda"
+new_file_path = "E:/Demo_Base/The_Wodden_House/test_conv/usd_exp.usda"
 
 
 # open new master file
@@ -52,17 +53,17 @@ iconver_exe = "iconvert.exe"
 #         /// FUNCTIONS ////  
 
 def refactor_copy_dic(copy_dic):
+
     udim_work_dic = dict()
     udim_files = []
     udim_files_destination = []
     for sorce in copy_dic:
-        
-        
         if "<UDIM>" in sorce:
             udim_files.append(sorce)  
             udim_files_destination.append(copy_dic[sorce])
-            udim_work_dic[sorce]=copy_dic[sorce]            
-            
+            udim_work_dic[sorce]=copy_dic[sorce]  
+        else:
+            IO_file_copy_dic[sorce]=copy_dic[sorce]  
     for files in udim_work_dic:
         filenames = fnmatch.filter(os.listdir(os.path.dirname(files)), '*')
         target_file_dir = os.path.dirname(udim_work_dic[files])
@@ -71,13 +72,6 @@ def refactor_copy_dic(copy_dic):
         for tex in filenames:
             if re.search(f'{file_front}1[0-9][0-9][0-9]{file_back}', tex):
                 IO_file_copy_dic[os.path.join(os.path.dirname(files),tex)] = os.path.join(target_file_dir,tex)
-
-
-
-
-
-
-
 
 class file_manager():
         
@@ -107,12 +101,6 @@ class file_manager():
                         print(line.replace(line.split("@")[-2].split(".")[-1], "rat"))
                     else:
                         print(line)
-                
-
-
-
-
-
 
 class line_runner():
     
@@ -122,8 +110,10 @@ class line_runner():
         file_destination_dir = sublayer_files+"\\"+file_to_copy.split("\\")[-2] + "\\" + file_to_copy.split("\\")[-1]
         
         new_rel_file_path = "@" + os.path.relpath(file_destination_dir, new_file_path)[1:] + "@"
+        new_rel_file_path = new_rel_file_path.replace('\\','/')
         old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
-        
+
+        print("build_file_pathing()    ","new_rel_path:",new_rel_file_path,"     old_rel_path:",old_rel_path)
         return new_rel_file_path, old_rel_path, file_destination_dir, file_to_copy
 
 
@@ -136,14 +126,14 @@ class line_runner():
             new_file_write (String): this is the new file you are trying to write out 
             function_set (int): this is a varible that selects the functions to runn (1: all texture files types, 2: all usd files (exept usda), 3:usda files, 9:all)
         """    
-        
+        print("")
+        print("line_runner file to run true   ",file_to_run_true)
 
 
         for line in file_to_run_true:
             
-
             if any(ext in line for ext in texture_file_types) and "file" in line: 
-                
+
                 result = line_runner.build_file_pathing(line)
                 
                 IO_file_sorce_dic[result[3]] = result[2]
@@ -151,24 +141,32 @@ class line_runner():
 
                 
             elif any(ext in line for ext in usd_file_types) and not "@usda": # this function exists because it will be important to report all non usda usd files in order to show the files that might not be resolved in the ui 
+
                 result = line_runner.build_file_pathing(line)
                 IO_file_sorce_dic[result[3]] = result[2]
                 new_file_write.write(line.replace(result[1], result[0])) 
 
 
-            elif "usda@" in line:
-
-
-                file_to_copy = (os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) 
-                new_rel_file_path = "@" + os.path.relpath(os.path.abspath(sublayer_usda_files+file_to_copy.split("\\")[-2]+"\\" +file_to_copy.split("\\")[-1]), new_file_path)[1:] + "@"
-                old_rel_path = "@" + (line.strip().split("@"))[-2] + "@"
-
-                new_file_write.write(line.replace(old_rel_path, new_rel_file_path))
+            elif "usda@" in line:   #TODO find the 
+                
+                print("line runner usda found  ")
+                print("line runner curent work file ", file_to_run_true.name)
+                print("line runner file taht gets created ", new_file_write.name)
+                print("line runner original abs path and new abs path")
+                print("")
+                
+                current_file = ""
+                new_created_file = ""
+                
+                original_rel_file_path = ""
+                original_abs_file_path = ""
+                
+                new_abs_file_path = ""
+                new_rel_file_path = ""
+                
 
             else:
                 new_file_write.write(line)
-
-
 
 # function to recursivle search true all usda files 
 def recurve_usda_search(file):
@@ -177,9 +175,9 @@ def recurve_usda_search(file):
     opend_file = open(file, "r")
     # go true all the lines  in the usda file
     for line in opend_file:
+        
         # find all the usda files in the master file
         if "usda@" in line:
-        
             os.chdir(os.path.dirname(os.path.abspath(file)))  
 
             
@@ -194,6 +192,7 @@ def recurve_usda_search(file):
             
     # recursevly search true all found usda files
     for files in usd_files:
+        print("recrusive search found   ", files)
         recurve_usda_search(files)
     opend_file.close()
 
@@ -223,8 +222,8 @@ def search_true_usda_files(usda_files):
         all_written_usda_files.append(new_file_path)
 
         line_runner.run_true_line(opend_file_old,new_file_write, 5)
+        print("search_true_usda_files work file   ",opend_file_old)
         new_file.close()
-
 
 # Function that bilds the master usda file 
 def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
@@ -235,12 +234,6 @@ def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
     line_runner.run_true_line(old_file,new_file_write, 5)
     old_file.close()
     new_file_write.close()
-
-
-
-        
-
-    
 
 #      /// Calls ///
 
@@ -253,10 +246,9 @@ def calls():
     write_new_master_usda_file(file_path,new_file_path)
     refactor_copy_dic(IO_file_sorce_dic)
     
-    
-    file_manager.copy_files(IO_file_copy_dic)
-    file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
-    
+    #file_manager.copy_files(IO_file_copy_dic)
+    #file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
+
     
 
 calls()
