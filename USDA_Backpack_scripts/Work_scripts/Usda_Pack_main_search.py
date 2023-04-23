@@ -2,18 +2,12 @@ import os
 import shutil
 import re
 import fnmatch
-import pprint
 import fileinput
 from pathlib import Path
 
-#E:/Demo_Base/The_Wodden_House/Rendering/usd_test3.usda
-#E:/Demo_Base/The_Wodden_House/Rendering/Shoot_1_sceene_usda.usda
 # define master file paths
-file_path = "C:/Users/lyonm/Documents/GitHub/usd_backpack_test_cases/Simple_tester/Sceene/main_sccene_render.usda"
-new_file_path = "C:/Users/lyonm/Documents/GitHub/usd_backpack_test_cases/test_out/simple_tester/simple_test_exp_test.usda"
-
-
-# open new master file
+file_path = "E:/Tools/USDA_backpack/test_cases/usd_backpack_test_cases/Simple_tester/Sceene/main_sccene_render.usda"
+new_file_path = "E:/Tools/USDA_backpack/test_cases/usd_backpack_test_cases/test_out/simple_test_exp_test.usda"
 
 
 
@@ -95,19 +89,24 @@ class file_manager():
     
     def convert_to_rat(IO_dic,usd_dic):
         for sorce_file in IO_dic: 
-            print("test:",sorce_file)
-            in_file = IO_dic[sorce_file]
-            cmd_iconvert_command = "-g auto  " + in_file +"  " + in_file.replace(in_file.split("/")[-1].split(".")[-1],'rat')
-            cmd_command = '"'+Hou_dir+iconver_exe+'" '+ cmd_iconvert_command  #TODO this needs to be multi thread
-            os.system(cmd_command)
-            os.remove(in_file)
-        
+            in_file = os.path.abspath(IO_dic[sorce_file])
+            if in_file.endswith(".hdr"):
+                print("hdr_files_will_not_be_converted", in_file)
+            else:
+                print("rat conf files:",in_file)
+                cmd_iconvert_command = "-g off  -d float  " + in_file +"  " + in_file.replace(in_file.split("/")[-1].split(".")[-1],'rat')
+                cmd_command = '"'+Hou_dir+iconver_exe+'" '+ cmd_iconvert_command  #TODO this needs to be multi thread
+                os.system(cmd_command)
+                os.remove(in_file)
+            
         for file in usd_dic:
-            print("recursive files ", file)
-            with fileinput.input(inplace=True,files=(file)) as f:
+            work_file = os.path.abspath(file)
+            print("recursive files ", work_file)
+            with fileinput.input(inplace=True,files=(work_file)) as f:
                 for line in f:
-                    if any(ext in line for ext in texture_file_types) and "file" in line: 
+                    if any(ext in line for ext in texture_file_types) and ":file" in line and not line.split("@")[-2].endswith(".hdr"):      
                         print(line.replace(line.split("@")[-2].split(".")[-1], "rat"))
+
                     else:
                         print(line)
 
@@ -151,7 +150,8 @@ class line_runner():
         for line in file_to_run_true:
             
             if any(ext in line for ext in texture_file_types) and ":file" in line: 
-                print("line_runner run true line ", file_to_run_true.name)
+                print("line_runner_run_true_line ", file_to_run_true.name)
+                print(texture_file_types)
                 print("tex file found ", line)
                 result = line_runner.build_file_pathing(line,file_to_run_true.name)
                 
@@ -264,7 +264,7 @@ def calls():
     refactor_copy_dic(IO_file_sorce_dic)
     
     file_manager.copy_files(IO_file_copy_dic)
-    # file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
+    file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
 
     
 

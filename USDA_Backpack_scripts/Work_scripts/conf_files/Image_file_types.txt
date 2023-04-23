@@ -9,6 +9,7 @@
 .psb
 .cin
 .kdk
+.hdr
 .fit
 .gif
 .gif89
