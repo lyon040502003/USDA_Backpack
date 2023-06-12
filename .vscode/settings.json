@@ -1,0 +1,10 @@
+{
+    "VSCodeNotion.api": "https://notion-api.frenco.dev",
+    "VSCodeNotion.accessToken": "secret_JAkp2oFxbRk5tH0CJY3noqfdf37YDsGAUXz08oycxh2",
+    "VSCodeNotion.allowEmbeds": false,
+    "VSCodeNotion.fontFamily": "'Helvetica Neue', sans-serif",
+    "VSCodeNotion.fontSize": 14,
+    "VSCodeNotion.lineHeight": 1.5,
+    "terminal.explorerKind": "external",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt"
+  }
