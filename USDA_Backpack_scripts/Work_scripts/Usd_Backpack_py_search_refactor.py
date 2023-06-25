@@ -68,7 +68,6 @@ def debug_printer(*args, is_on:bool=False, debugt_funct:str="No funtion Decleard
         print("-"*80)
 
 
-
 #         /// FUNCTIONS //// 
 
 def refactor_copy_dic(copy_dic):
@@ -208,29 +207,28 @@ class line_runner():
             else:
                 new_file_write.write(line)
 
-# function to recursivle search true all usda files 
+# function to recursivle search true all usda files TODO add function for handling usd files ( usd cat )
+# Rebuild V1
 def recurve_usda_search(file, debug:bool=False):
     all_found_files = []
-    def _recurve_usda_search_inner_search(file):
+    def _recurve_usda_search_inner_search(file,debug):
         usdas_found_in_this_file = []
-        current_file = open(file, "r")
-        # go true all the lines  in the usda file
-        for line in current_file:
-            # find all the usda files in the master file
-            if "usda@" in line:
-                os.chdir(os.path.dirname(os.path.abspath(file)))
-                # build full file path for the files to copy from the relative path
-                # file_to_copy = os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\') # this function sperates the usda path out off the line
-                # appendie_dict.append(os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) # this function sperates the usda path out off the line
-                usdas_found_in_this_file.append(os.path.abspath((line.strip().split("@"))[-2]).replace('/', '\\')) # this function sperates the usda path out off the line
-                all_found_files.append(os.path.abspath((line.strip().split("@"))[-2]).replace('/', '\\'))
-        current_file.close()
+        with open(file, "r") as current_file:
+            # go true all the lines  in the usda file
+            for line in current_file:
+                # find all the usda files in the master file
+                if "usda@" in line:
+                    os.chdir(os.path.dirname(os.path.abspath(file)))
+                    # build full file path for the files to copy from the relative path
+                    # file_to_copy = os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\') # this function sperates the usda path out off the line
+                    # appendie_dict.append(os.path.abspath((line.strip().split("@"))[-2]).replace('/','\\')) # this function sperates the usda path out off the line
+                    usdas_found_in_this_file.append(os.path.abspath((line.strip().split("@"))[-2]).replace('/', '\\')) # this function sperates the usda path out off the line
+                    all_found_files.append(os.path.abspath((line.strip().split("@"))[-2]).replace('/', '\\'))
+        debug_printer(file,usdas_found_in_this_file, is_on=debug,debugt_funct="_recurve_usda_search_inner_search", print_at_start= "recrusive search found  : ")
         # recursevly search true all found usda files
         for files in usdas_found_in_this_file:
-            _recurve_usda_search_inner_search(files)
-    _recurve_usda_search_inner_search(file)
-    pprint.pprint(all_found_files)
-    # debug_printer(recursive_found_usd_files, is_on=debug,debugt_funct="recurve_usda_search", print_at_start="recrusive search found  : ") #TODO debuger not in the right places and not connected // debug info schoud be parent file and then Child Files. maybe evnen sublayer vs referance
+            _recurve_usda_search_inner_search(files,debug)
+    _recurve_usda_search_inner_search(file,debug)
     return all_found_files# TODO make shure function returns all files
 
 
@@ -264,6 +262,11 @@ def search_true_usda_files(usda_files):
         line_runner.run_true_line(opend_file_old,new_file_write, 5)
         print("search_true_usda_files work file   ",opend_file_old)
         new_file_write.close()
+
+
+# function to find all files present in a usda file
+
+
 
 # Function that bilds the master usda file 
 def write_new_master_usda_file(old_master_usda_file, new_master_usda_file):
@@ -345,9 +348,15 @@ def Call_py_search(sorce_path,Destination_path,Hou_bin_foulder: str= "C:/Program
     if Rat_Convert:
         file_manager.convert_to_rat(IO_file_copy_dic,all_written_usda_files)
 
-found_usds = []
 
-found_usds.append(recurve_usda_search("E:/Tools/USDA_backpack/test_cases/usd_backpack_test_cases/Simple_tester/Sceene/main_sccene_render.usda",debug=True))
-# recurve_usda_search("E:/Tools/USDA_backpack/test_cases/usd_backpack_test_cases/Simple_tester/Sceene/main_sccene_render.usda",found_usds,debug=True)
-# print("test")
+# find all the files present in the master usd file and then ask the user if the non usda files shoud be converted
+found_usds = recurve_usda_search("E:/Tools/USDA_backpack/test_cases/usd_backpack_test_cases/Simple_tester/Sceene/main_sccene_render2.usda",debug=True)
+
+# convert usd files to usda and search true them then append to found_usdas list
+
+# find all non usd files present in the found usda files
+# nextb = search_true_usda_files(found_usds)
+# print(nextb)
 # pprint.pprint(found_usds)
+
+
