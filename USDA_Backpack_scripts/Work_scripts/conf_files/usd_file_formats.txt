@@ -1,4 +1,0 @@
-.usda
-.usd
-.usdz
-.usdc
